@@ -1,0 +1,56 @@
+
+.student-container {
+  padding: 40px;
+  text-align: center;
+}
+
+.student-search {
+  margin: 20px 0;
+}
+
+.student-search input {
+  padding: 12px;
+  width: 260px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-right: 10px;
+}
+
+.student-search button {
+  padding: 12px 18px;
+  border: none;
+  border-radius: 8px;
+  background: #6366f1;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.student-search button:hover {
+  background: #4f46e5;
+}
+
+.no-cert {
+  margin-top: 20px;
+  color: gray;
+}
+
+.cert-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 25px;
+  margin-top: 30px;
+}
+
+.cert-card {
+  background: white;
+  padding: 25px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  text-align: left;
+}
+
+.cert-card h3 {
+  color: #6366f1;
+  margin-bottom: 10px;
+}
