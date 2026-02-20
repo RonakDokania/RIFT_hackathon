@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/form.css";
@@ -8,14 +7,9 @@ export default function Login() {
   const navigate = useNavigate();
 
   const handleLogin = () => {
-    if (!wallet) {
-      alert("Enter wallet address");
-      return;
-    }
+    if (!wallet) return alert("Enter wallet address");
 
-    // store logged in wallet
     localStorage.setItem("currentWallet", wallet);
-
     navigate("/student");
   };
 

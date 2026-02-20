@@ -1,115 +1,86 @@
 import { useState } from "react";
-import "../styles/form.css";
+import { connectWallet } from "../utils/wallet";
+import { issueCertificate } from "../utils/api";
 
 export default function Issuer() {
-  const [formData, setFormData] = useState({
-    name: "",
-    wallet: "",
-    course: "",
-    file: null,
-  });
+  const [wallet, setWallet] = useState("");
 
-  const handleChange = (e) => {
-    const { name, value, files } = e.target;
+  const [name, setName] = useState("");
+  const [course, setCourse] = useState("");
+  const [file, setFile] = useState(null);
 
-    if (name === "file") {
-      setFormData({ ...formData, file: files[0] });
-    } else {
-      setFormData({ ...formData, [name]: value });
-    }
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+
+  // ✅ connect only on button click
+  const handleConnect = async () => {
+    const acc = await connectWallet();
+    setWallet(acc);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const certificates =
-      JSON.parse(localStorage.getItem("certificates")) || [];
+    if (!wallet) return alert("Connect wallet first");
 
-    const walletOwner = certificates.find(
-      (cert) => cert.studentWallet === formData.wallet
-    );
+    try {
+      setLoading(true);
+      setMessage("");
 
-    if (
-      walletOwner &&
-      walletOwner.studentName !== formData.name
-    ) {
-      alert("❌ User already registered with this wallet");
-      return;
+      const formData = new FormData();
+      formData.append("name", name);
+      formData.append("course", course);
+      formData.append("file", file);
+      formData.append("wallet", wallet);
+
+      await issueCertificate(formData);
+
+      setMessage("✅ Certificate issued");
+      setName("");
+      setCourse("");
+      setFile(null);
+    } catch {
+      setMessage("❌ Issue failed");
+    } finally {
+      setLoading(false);
     }
-
-    const duplicateCourse = certificates.find(
-      (cert) =>
-        cert.studentWallet === formData.wallet &&
-        cert.course.toLowerCase() === formData.course.toLowerCase()
-    );
-
-    if (duplicateCourse) {
-      alert("❌ Certificate for this course already issued!");
-      return;
-    }
-
-    const newCertificate = {
-      id: Date.now(),
-      studentName: formData.name,
-      studentWallet: formData.wallet,
-      course: formData.course,
-      issueDate: new Date().toLocaleDateString(),
-      cid: "CID_" + Date.now(),
-    };
-
-    const updatedCertificates = [...certificates, newCertificate];
-
-    localStorage.setItem(
-      "certificates",
-      JSON.stringify(updatedCertificates)
-    );
-
-    alert("✅ Certificate Issued Successfully");
-
-    setFormData({
-      name: "",
-      wallet: "",
-      course: "",
-      file: null,
-    });
   };
 
   return (
     <div className="form-container">
       <h2>Issue Certificate</h2>
 
+      {/* ✅ WALLET BUTTON */}
+      <button onClick={handleConnect} className="btn">
+        {wallet ? "Wallet Connected ✅" : "Connect Wallet"}
+      </button>
+
       <form onSubmit={handleSubmit}>
         <input
           type="text"
-          name="name"
           placeholder="Student Name"
-          value={formData.name}
-          onChange={handleChange}
-          required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
         />
 
         <input
           type="text"
-          name="wallet"
-          placeholder="Wallet Address"
-          value={formData.wallet}
-          onChange={handleChange}
-          required
+          placeholder="Course"
+          value={course}
+          onChange={(e) => setCourse(e.target.value)}
         />
 
         <input
-          type="text"
-          name="course"
-          placeholder="Course Name"
-          value={formData.course}
-          onChange={handleChange}
-          required
+          type="file"
+          onChange={(e) => setFile(e.target.files[0])}
         />
 
-        <input type="file" name="file" onChange={handleChange} />
-
-        <button type="submit">Issue Certificate</button>
+        <button className="btn" disabled={loading}>
+          {loading ? "Issuing..." : "Issue Certificate"}
+        </button>
       </form>
+
+      {message && <p>{message}</p>}
     </div>
   );
 }

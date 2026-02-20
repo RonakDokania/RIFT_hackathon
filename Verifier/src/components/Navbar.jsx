@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
-import "../styles/navbar.css";
+import "./navbar.css";
 
 export default function Navbar() {
   return (
-    <div className="navbar">
+    <div className="nav">
       <h2>Verify</h2>
 
-      <div>
+      <div className="nav-links">
         <Link to="/issuer">Issuer</Link>
         <Link to="/student">Student</Link>
         <Link to="/verifier">Verifier</Link>

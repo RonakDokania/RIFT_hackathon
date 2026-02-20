@@ -1,61 +1,76 @@
-import { useState } from "react";
-import Navbar from "../components/Navbar";
-import "../styles/dashboard.css";
-import "../styles/card.css";
+import { useState, useEffect } from "react";
+import { verifyTransaction } from "../utils/api";
+import { connectWallet, reconnectSession } from "../utils/wallet";
 
 export default function Verifier() {
   const [wallet, setWallet] = useState("");
-  const [certificates, setCertificates] = useState([]);
-  const [searched, setSearched] = useState(false);
+  const [txId, setTxId] = useState("");
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleVerify = () => {
-    const data = JSON.parse(localStorage.getItem("certificates")) || [];
+  useEffect(() => {
+    reconnectSession().then((acc) => acc && setWallet(acc));
+  }, []);
 
-    const result = data.filter(
-      (cert) => cert.studentWallet === wallet
-    );
+  const handleConnect = async () => {
+    const acc = await connectWallet();
+    setWallet(acc);
+  };
 
-    setCertificates(result);
-    setSearched(true);
+  const handleVerify = async () => {
+    if (!txId) return;
+
+    try {
+      setLoading(true);
+      setError("");
+      const res = await verifyTransaction(txId);
+      setData(res.certificate);
+    } catch {
+      setError("Transaction not found ❌");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <>
-      <Navbar />
+    <div className="form-container">
+      <h2>Verify Certificate</h2>
 
-      <div className="dashboard">
-        <h2>Verify Certificate</h2>
+      <button onClick={handleConnect} className="btn">
+        {wallet ? "Wallet Connected ✅" : "Connect Wallet"}
+      </button>
 
-        <div className="search-box">
-          <input
-            type="text"
-            placeholder="Enter Wallet Address"
-            value={wallet}
-            onChange={(e) => setWallet(e.target.value)}
-          />
-          <button onClick={handleVerify}>Verify</button>
-        </div>
+      <input
+        placeholder="Enter TxID"
+        value={txId}
+        onChange={(e) => setTxId(e.target.value)}
+      />
 
-        {searched && certificates.length > 0 && (
-          <h3 style={{ color: "green" }}>✅ Verified</h3>
-        )}
+      <button onClick={handleVerify} className="btn" disabled={!txId || loading}>
+        {loading ? "Verifying..." : "Verify"}
+      </button>
 
-        {searched && certificates.length === 0 && (
-          <h3 style={{ color: "red" }}>❌ No Record Found</h3>
-        )}
+      {error && <p className="error">{error}</p>}
 
-        <div className="card-container">
-          {certificates.map((cert) => (
-            <div className="card" key={cert.id}>
-              <h3>{cert.course}</h3>
-              <p><strong>Name:</strong> {cert.studentName}</p>
-              <p><strong>Wallet:</strong> {cert.studentWallet}</p>
-              <p><strong>Date:</strong> {cert.issueDate}</p>
-              <p><strong>CID:</strong> {cert.cid}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
+      {data && (
+        <>
+          <div className="card">
+            <p><strong>Name:</strong> {data.name}</p>
+            <p><strong>Course:</strong> {data.course}</p>
+            <p><strong>Wallet:</strong> {data.wallet}</p>
+          </div>
+
+          <a
+            href={`https://testnet.algoexplorer.io/tx/${data.txId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View on Explorer 🔗
+          </a>
+        </>
+      )}
+    </div>
   );
 }

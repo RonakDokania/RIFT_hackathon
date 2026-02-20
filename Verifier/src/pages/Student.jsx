@@ -1,46 +1,50 @@
-import { useState } from "react";
-import "../styles/student.css";
-import { getCertificatesByWallet } from "../utils/storage";
+import { useState, useEffect } from "react";
+import { connectWallet, reconnectSession } from "../utils/wallet";
+import { loadCertificates } from "../utils/api";
 
 export default function Student() {
   const [wallet, setWallet] = useState("");
   const [certs, setCerts] = useState([]);
 
-  const handleLogin = () => {
-    const data = getCertificatesByWallet(wallet);
-    setCerts(data);
+  useEffect(() => {
+    reconnectSession().then((acc) => acc && setWallet(acc));
+  }, []);
+
+  const handleLoad = async () => {
+    if (!wallet) return;
+
+    try {
+      const data = await loadCertificates(wallet);
+      setCerts(data);
+    } catch (err) {
+      alert("Failed to load certificates");
+    }
+  };
+
+  const handleConnect = async () => {
+    const acc = await connectWallet();
+    setWallet(acc);
   };
 
   return (
-    <div className="student-container">
-
+    <div className="form-container">
       <h2>Your Certificates</h2>
 
-      <div className="student-search">
-        <input
-          type="text"
-          placeholder="Enter Wallet Address"
-          value={wallet}
-          onChange={(e) => setWallet(e.target.value)}
-        />
-        <button onClick={handleLogin}>Load</button>
-      </div>
+      <button onClick={handleConnect} className="btn">
+        {wallet ? "Wallet Connected ✅" : "Connect Wallet"}
+      </button>
 
-      {certs.length === 0 ? (
-        <p className="no-cert">No certificates found</p>
-      ) : (
-        <div className="cert-grid">
-          {certs.map((cert) => (
-            <div className="cert-card" key={cert.id}>
-              <h3>{cert.course}</h3>
-              <p><b>Name:</b> {cert.studentName}</p>
-              <p><b>Wallet:</b> {cert.studentWallet}</p>
-              <p><b>Date:</b> {cert.issueDate}</p>
-              <p><b>CID:</b> {cert.cid}</p>
-            </div>
-          ))}
+      <button onClick={handleLoad} className="btn" disabled={!wallet}>
+        Load
+      </button>
+
+      {certs.map((c) => (
+        <div key={c.txId} className="card">
+          <p><b>Name:</b> {c.name}</p>
+          <p><b>Course:</b> {c.course}</p>
+          <p><b>TxID:</b> {c.txId}</p>
         </div>
-      )}
+      ))}
     </div>
   );
 }
